@@ -18,9 +18,11 @@ Export-ExcelFunction returns Excel functions with 'WorkbookIndex', which tells t
 
 ```ps1
 Get-ChildItem -Filter *.xl?? -File | Export-ExcelFunction
+```
 
 The command above will return the Excel functions found in the input files, just as below:
 
+```
 WorkbookIndex     Function
 -------------     --------
 20210625213459224 SUM
@@ -42,9 +44,11 @@ $measuredFunctions = $exportedFunctions | Group-Object -Property Function |
         @{label="CountByBook"; expression={@($_.Group | Select-Object -Property WorkbookIndex -Unique).Length}}
 
 $measuredFunctions | Sort-Object -Property CountByBook -Descending | Select-Object -First 20
+```
 
 The result will be below:
 
+```
 Function CountByCell CountByBook
 -------- ----------- -----------
 IF              3037          15
