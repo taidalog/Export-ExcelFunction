@@ -25,7 +25,15 @@ function Export-ExcelFunction {
     20210625213459224 IF
     20210625213459224 AVERAGE
     20210625213459224 SUM
-    20210625213459224 SUM
+    20210625213401369 RAND
+    20210625213401369 RAND
+    20210625213401369 MAX
+    20210625213401369 MIN
+    20210625213402480 COUNTIF
+    20210625213402480 COUNTIF
+    20210625213402480 SUMIF
+
+    In this case, first four Functions, whose WorkbookIndex are '20210625213459224', were from the same workbook.
 
     .EXAMPLE
     $exportedFunctions = Get-ChildItem -Filter *.xl?? -File | Export-ExcelFunction
