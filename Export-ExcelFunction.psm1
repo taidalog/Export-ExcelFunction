@@ -72,8 +72,14 @@ function Export-ExcelFunction {
     DATE               2           2
     
     .PARAMETER Path
-    .PARAMETER IncludeMulti
+    Path to one or more locations.
+
+    .PARAMETER CountMultiAppearance
+    Counts all the appearances of each function in a cell.
+
     .PARAMETER KeepWorkFile
+    Leaves working files even after processing was finished.
+    
     .INPUTS
     .OUTPUTS
     .LINK
@@ -98,11 +104,11 @@ function Export-ExcelFunction {
                    ParameterSetName="Path",
                    HelpMessage="Counts all the appearances of each function in a cell.")]
         [switch]
-        $IncludeMulti,
+        $CountMultiAppearance,
 
         [Parameter(Mandatory=$false,
                    ParameterSetName="Path",
-                   HelpMessage="Leaves working files even after function has been finished.")]
+                   HelpMessage="Leaves working files even after processing was finished.")]
         [switch]
         $KeepWorkFile
     )
@@ -171,7 +177,7 @@ function Export-ExcelFunction {
                     foreach ($fml in $matchedFormulas) {
                         $matchedFunctions = $regexObjectForFunction.Matches($fml.Value)
 
-                        if ($IncludeMulti -eq $false) {
+                        if ($CountMultiAppearance -eq $false) {
                             $matchedFunctions = $matchedFunctions | Select-Object -Unique
                         }
 

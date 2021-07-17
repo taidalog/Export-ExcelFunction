@@ -2,15 +2,15 @@
 
 ## SYNOPSIS
 
-Exports Excel Functions used in inputted Excel files.
+Exports Excel Functions from a specified Excel file.
 
 ## DESCRIPTION
 
-Export-ExcelFunction function returns Excel functions used in inputted Excel files.
-It will be used in order to, mainly, know the appearance of each Excel function.
+Export-ExcelFunction function extracts Excel functions from a specified Excel file.
+It will be used in order to, mainly, know the number of appearances of each Excel function.
 
-When ectracting Excel functions, Export-ExcelFunction copies target files, renames them as .zip files, and expand them in oreder to uses XML files.
-So the targert files need to be .xlsx, .xlsm or .xlam files.
+When extracting Excel functions, Export-ExcelFunction copies the target file, renames it as a .zip file, and expand it in oreder to use XML files.
+So the targert file need to be .xlsx, .xlsm, .xlam, .xltx or .xltm file.
 
 Export-ExcelFunction returns Excel functions with 'WorkbookIndex', which tells that Functions with the same 'WorkbookIndex' were found in the same workbook.
 
@@ -20,7 +20,7 @@ Export-ExcelFunction returns Excel functions with 'WorkbookIndex', which tells t
 Get-ChildItem -Filter *.xl?? -File | Export-ExcelFunction
 ```
 
-The command above will return the Excel functions found in the input files, just as below:
+The command above will return the Excel functions from the input files, just as below:
 
 ```
 WorkbookIndex     Function
@@ -38,7 +38,7 @@ WorkbookIndex     Function
 20210625213402480 SUMIF
 ```
 
-In this case, first four Functions, whose WorkbookIndex are '20210625213459224', were from the same workbook.
+In this case, first four Functions, whose WorkbookIndex are '20210625213459224', are from the same workbook.
 
 ## EXAMPLE 2
 
