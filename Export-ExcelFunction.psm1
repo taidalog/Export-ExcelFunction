@@ -3,21 +3,21 @@ Set-StrictMode -Version Latest
 function Export-ExcelFunction {
     <#
     .SYNOPSIS
-    Exports Excel Functions used in inputted Excel files.
+    Exports Excel Functions from a specified Excel file.
 
     .DESCRIPTION
-    Export-ExcelFunction function returns Excel functions used in inputted Excel files.
-    It will be used in order to, mainly, know the appearance of each Excel function.
+    Export-ExcelFunction function extracts Excel functions from a specified Excel file.
+    It will be used in order to, mainly, know the number of appearances of each Excel function.
     
-    When ectracting Excel functions, Export-ExcelFunction copies target files, renames them as .zip files, and expand them in oreder to uses XML files.
-    So the targert files need to be .xlsx, .xlsm or .xlam files.
+    When extracting Excel functions, Export-ExcelFunction copies the target file, renames it as a .zip file, and expand it in oreder to use XML files.
+    So the targert file need to be .xlsx, .xlsm, .xlam, .xltx or .xltm file.
 
     Export-ExcelFunction returns Excel functions with 'WorkbookIndex', which tells that Functions with the same 'WorkbookIndex' were found in the same workbook.
 
     .EXAMPLE
     Get-ChildItem -Filter *.xl?? -File | Export-ExcelFunction
 
-    The command above will return the Excel functions found in the input files, just as below:
+    The command above will return the Excel functions from the input files, just as below:
 
     WorkbookIndex     Function
     -------------     --------
@@ -33,7 +33,7 @@ function Export-ExcelFunction {
     20210625213402480 COUNTIF
     20210625213402480 SUMIF
 
-    In this case, first four Functions, whose WorkbookIndex are '20210625213459224', were from the same workbook.
+    In this case, first four Functions, whose WorkbookIndex are '20210625213459224', are from the same workbook.
 
     .EXAMPLE
     $exportedFunctions = Get-ChildItem -Filter *.xl?? -File | Export-ExcelFunction
@@ -72,6 +72,7 @@ function Export-ExcelFunction {
     DATE               2           2
     
     .PARAMETER Path
+    .PARAMETER IncludeMulti
     .PARAMETER KeepWorkFile
     .INPUTS
     .OUTPUTS
@@ -93,6 +94,15 @@ function Export-ExcelFunction {
         [string[]]
         $Path,
 
+        [Parameter(Mandatory=$false,
+                   ParameterSetName="Path",
+                   HelpMessage="Counts all the appearances of each function in a cell.")]
+        [switch]
+        $IncludeMulti,
+
+        [Parameter(Mandatory=$false,
+                   ParameterSetName="Path",
+                   HelpMessage="Leaves working files even after function has been finished.")]
         [switch]
         $KeepWorkFile
     )
@@ -104,15 +114,16 @@ function Export-ExcelFunction {
         # zip extension
         $zipExtension = '.zip'
 
-        $xmlPathStructure = 'xl\worksheets'
+        # XML based Excel extensions. Files with other extensions will be not allowed.
+        $xmlBasedExcelExtensions = @('.xlsx', '.xlsm', '.xlam', '.xltx', '.xltm')
+
+        $xmlParentDirectoriesPath = 'xl\worksheets'
         
-        $regexPatternForFormula = '(?<=<f[^<]*>).+?(?=</f.*>)'
+        $regexPatternForFormula = '(?<=<f[^<]*>).+?(?=</f>)'
         $regexObjectForFormula = [regex]::new($regexPatternForFormula)
         
-        $regexPatternForFunction = '(?<=[=\+\-\*/,&\(]*)[0-9A-Za-z\.]+(?=\()'
+        $regexPatternForFunction = '(?<=[=\+\-\*/<>,&\(]*)[0-9A-Za-z\.]+(?=\()'
         $regexObjectForFunction = [regex]::new($regexPatternForFunction)
-
-#        $workbookIndex = 0
     }
     
     process {
@@ -121,11 +132,16 @@ function Export-ExcelFunction {
             $convertedPath = Convert-Path $p
             Write-Verbose "convertedPath = $($convertedPath)"
             
-#            $workbookIndex++
+            $originalExtension = [System.IO.Path]::GetExtension($convertedPath)
+
+            if ($originalExtension -notin $xmlBasedExcelExtensions) {
+                Write-Verbose "Skipped: File with NON-Excel extension, $($convertedPath)"
+                continue
+            }
+            
             [string]$workbookIndex = (Get-Date).ToString('yyyyMMddHHmmssfff')
 
             # path to the place to copy xl?? file
-            $originalExtension = [System.IO.Path]::GetExtension($convertedPath)
             $newPath = $convertedPath.Replace($originalExtension, $zipExtension)
             $newFullName = Join-Path $workingPath (Split-Path $newPath -NoQualifier)
             Write-Verbose "newFullName   = $($newFullName)"
@@ -142,7 +158,7 @@ function Export-ExcelFunction {
             try {
                 Expand-Archive -LiteralPath $newFullName -DestinationPath $expandDestinationPath
                 
-                $xmlFilesPath = Join-Path $expandDestinationPath $xmlPathStructure
+                $xmlFilesPath = Join-Path $expandDestinationPath $xmlParentDirectoriesPath
                 Write-Verbose "xmlFilesPath          = $($xmlFilesPath)"
 
                 $xmlFiles = Get-ChildItem -LiteralPath $xmlFilesPath -Filter *.xml -File
@@ -155,6 +171,10 @@ function Export-ExcelFunction {
                     foreach ($fml in $matchedFormulas) {
                         $matchedFunctions = $regexObjectForFunction.Matches($fml.Value)
 
+                        if ($IncludeMulti -eq $false) {
+                            $matchedFunctions = $matchedFunctions | Select-Object -Unique
+                        }
+
                         foreach ($fnc in $matchedfunctions) {
                             [PSCustomObject]@{
                                 WorkbookIndex = $workbookIndex;
@@ -166,7 +186,7 @@ function Export-ExcelFunction {
                 }
             }
             catch [System.Management.Automation.MethodInvocationException] {
-                Write-Verbose "Workbook with password: $($expandDestinationPath)"
+                Write-Verbose "Skipped: Workbook with password, $($expandDestinationPath)"
             }
             finally {
                 if ($KeepWorkFile -eq $false) {
@@ -180,7 +200,9 @@ function Export-ExcelFunction {
     
     end {
         if ($KeepWorkFile -eq $false) {
-            Remove-Item -LiteralPath $workingPath -Recurse
+            if (Test-Path -LiteralPath $workingPath) {
+                Remove-Item -LiteralPath $workingPath -Recurse
+            }
         }
     }
 }
